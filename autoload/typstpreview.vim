@@ -166,7 +166,7 @@ function! s:get_buf_content(bufnr) abort
 endfunction
 
 function! s:get_buf_path(bufnr) abort
-  return bufname(a:bufnr)
+  return fnamemodify(bufname(a:bufnr), ':p')
 endfunction
 
 function! s:deep_extend(dest, src) abort
