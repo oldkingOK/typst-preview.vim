@@ -1,0 +1,151 @@
+# ✨ Typst Preview for Vim ✨
+
+Live preview [Typst](https://typst.app/) documents in your browser with low latency. Powered by [Myriad-Dreamin/tinymist](https://github.com/Myriad-Dreamin/tinymist).
+
+This is a Vim port of [chomosuke/typst-preview.nvim](https://github.com/chomosuke/typst-preview.nvim).
+
+## 💪 Features
+
+- **Low latency preview**: preview your document instantly on type.
+- **Cross jump**: click on the preview to jump to the corresponding code location, or have the preview follow your cursor in Vim.
+
+## 📦 Dependencies
+
+- Vim 8.2+ with `+channel`, `+job`, `+json`, `+timers` (check with `vim --version`)
+- [curl](https://curl.se/) (for downloading binaries)
+
+When first run, the plugin automatically downloads `tinymist` and `websocat` to `~/.local/share/vim/typst-preview/`.
+
+## 📦 Installation
+
+**vim-plug:**
+
+```vim
+Plug 'oldkingOK/typst-preview.vim'
+```
+
+**Vundle:**
+
+```vim
+Plugin 'oldkingOK/typst-preview.vim'
+```
+
+**minpac:**
+
+```vim
+call minpac#add('oldkingOK/typst-preview.vim')
+```
+
+**Manual:**
+
+```bash
+git clone https://github.com/oldkingOK/typst-preview.vim.git \
+    ~/.vim/pack/plugins/start/typst-preview.vim
+```
+
+## 🚀 Usage
+
+Run `:TypstPreviewUpdate` first to download required binaries, or let `setup()` handle it.
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `:TypstPreviewUpdate` | Download/update required binaries. |
+| `:TypstPreview [mode]` | Start preview. `mode` can be `document` (default) or `slide`. |
+| `:TypstPreviewStop` | Stop the preview. |
+| `:TypstPreviewToggle` | Toggle the preview on/off. |
+| `:TypstPreviewFollowCursor` | Scroll preview as cursor moves (default behavior). |
+| `:TypstPreviewNoFollowCursor` | Don't scroll preview on cursor move. |
+| `:TypstPreviewFollowCursorToggle` | Toggle cursor-follow mode. |
+| `:TypstPreviewSyncCursor` | Scroll preview to current cursor position once. |
+
+### Vimscript API
+
+```vim
+" Setup with options
+call typstpreview#setup({'debug': v:true})
+
+" Control follow cursor
+call typstpreview#set_follow_cursor(1)
+call typstpreview#set_follow_cursor(0)
+echo typstpreview#get_follow_cursor()
+
+" Sync cursor to preview
+call typstpreview#sync_with_cursor()
+
+" Update binaries
+call typstpreview#update(v:true)   " quiet
+call typstpreview#update(v:false)  " verbose
+```
+
+## ⚙️ Configuration
+
+Call `typstpreview#setup({})` with any of the following options:
+
+```vim
+call typstpreview#setup({
+    \ 'debug': v:false,
+    \ 'open_cmd': v:null,
+    \ 'port': 0,
+    \ 'host': '127.0.0.1',
+    \ 'invert_colors': 'never',
+    \ 'follow_cursor': v:true,
+    \ 'dependencies_bin': {'tinymist': v:null, 'websocat': v:null},
+    \ 'extra_args': v:null,
+    \ })
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `debug` | `bool` | `v:false` | Enable debug logging to `~/.local/share/vim/typst-preview/log.txt` |
+| `open_cmd` | `string\|v:null` | `v:null` | Custom browser command (`%s` for URL) |
+| `port` | `number` | `0` | Port for preview server (0 = random) |
+| `host` | `string` | `'127.0.0.1'` | Host to bind the preview server |
+| `invert_colors` | `string` | `'never'` | `'never'`, `'always'`, `'auto'`, or per-component JSON |
+| `follow_cursor` | `bool` | `v:true` | Scroll preview as cursor moves |
+| `dependencies_bin` | `dict` | `{...}` | Path overrides: `{'tinymist': '/path/to/tinymist', 'websocat': '/path/to/websocat'}` |
+| `extra_args` | `list\|funcref\|v:null` | `v:null` | Extra CLI args for tinymist |
+| `get_root` | `funcref` | _see below_ | Function to determine project root |
+| `get_main_file` | `funcref` | `{p -> p}` | Function to determine main typst file |
+
+### Default `get_root`
+
+```vim
+function! GetRoot(path_of_main_file)
+  if !empty($TYPST_ROOT)
+    return $TYPST_ROOT
+  endif
+  let main_dir = fnamemodify(a:path_of_main_file, ':p:h')
+  for marker in ['typst.toml', '.git']
+    let found = findfile(marker, main_dir . ';')
+    if !empty(found)
+      return fnamemodify(found, ':p:h')
+    endif
+  endfor
+  return main_dir
+endfunction
+```
+
+## 🔧 Use existing tinymist installation
+
+Point `dependencies_bin` to your tinymist binary to skip the download:
+
+```vim
+call typstpreview#setup({
+    \ 'dependencies_bin': {'tinymist': 'tinymist'},
+    \ })
+```
+
+## 💻 How it works
+
+1. The plugin spawns `tinymist preview` which runs a preview server.
+2. `websocat` bridges Vim's job I/O to tinymist's WebSocket control plane.
+3. On every keystroke, the buffer content is sent to tinymist via `updateMemoryFiles` events.
+4. Tinymist renders the document and serves it on a local HTTP server.
+5. `editorScrollTo` events from the preview let you click to jump to code.
+
+## Credit
+
+Based on [chomosuke/typst-preview.nvim](https://github.com/chomosuke/typst-preview.nvim).  
+Built on [Myriad-Dreamin/tinymist](https://github.com/Myriad-Dreamin/tinymist).
