@@ -603,7 +603,8 @@ function! s:on_websocat_stderr(id, channel, data) abort
 endfunction
 
 function! s:dispatch_server_event(sd, event) abort
-  let listeners = get(a:sd, 'event_listeners', {})
+  let srv = get(get(s:servers, a:sd['path'], {}), a:sd['mode'], {})
+  let listeners = get(srv, 'event_listeners', {})
   let handler_list = get(listeners, a:event['event'], [])
   for Handler in handler_list
     call Handler(a:event)
