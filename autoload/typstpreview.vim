@@ -170,11 +170,11 @@ function! s:get_buf_path(bufnr) abort
 endfunction
 
 function! s:deep_extend(dest, src) abort
-  for [key, val] in items(a:src)
-    if type(val) == v:t_dict && type(get(a:dest, key)) == v:t_dict
-      call s:deep_extend(a:dest[key], val)
+  for [Key, Val] in items(a:src)
+    if type(Val) == v:t_dict && type(get(a:dest, Key)) == v:t_dict
+      call s:deep_extend(a:dest[Key], Val)
     else
-      let a:dest[key] = val
+      let a:dest[Key] = Val
     endif
   endfor
 endfunction
